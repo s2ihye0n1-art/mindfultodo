@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mindful Todo - 과부하 방지 플래너</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Auth Overlay (로그인 및 회원가입) -->
+  <div id="auth-overlay" class="setup-overlay">
+    <div class="setup-card glass-panel" style="max-width: 400px; padding: 2rem;">
+      <h2 style="font-family: var(--font-title); font-size: 1.8rem; margin-bottom: 0.5rem; background: linear-gradient(135deg, var(--text-primary) 30%, var(--accent-primary) 70%, var(--accent-secondary) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Mindful Todo</h2>
+      <p style="margin-bottom: 1.5rem; font-size: 0.9rem; color: var(--text-secondary);">나만을 위한 맞춤형 집중 시간 플래너</p>
+      
+      <!-- Auth Tabs -->
+      <div style="display: flex; gap: 0.5rem; background: var(--bg-tertiary); padding: 0.3rem; border-radius: var(--radius-sm); margin-bottom: 1.5rem;">
+        <button id="tab-login" class="btn" style="flex: 1; padding: 0.4rem; font-size: 0.85rem; background: var(--bg-secondary); color: var(--text-primary);">로그인</button>
+        <button id="tab-signup" class="btn" style="flex: 1; padding: 0.4rem; font-size: 0.85rem; background: transparent; color: var(--text-secondary);">회원가입</button>
+      </div>
+      
+      <!-- Login Form -->
+      <form id="login-form">
+        <div class="form-group" style="margin-bottom: 1rem;">
+          <label for="login-username" style="font-size: 0.8rem;">아이디</label>
+          <input type="text" id="login-username" class="input-field" placeholder="아이디 입력" required>
+        </div>
+        <div class="form-group" style="margin-bottom: 1.5rem;">
+          <label for="login-password" style="font-size: 0.8rem;">비밀번호</label>
+          <input type="password" id="login-password" class="input-field" placeholder="비밀번호 입력" required>
+        </div>
+        <button type="submit" class="btn btn-primary" style="width: 100%; padding: 0.7rem;">로그인</button>
+      </form>
+      
+      <!-- Signup Form -->
+      <form id="signup-form" class="hidden">
+        <div class="form-group" style="margin-bottom: 1rem;">
+          <label for="signup-username" style="font-size: 0.8rem;">아이디</label>
+          <input type="text" id="signup-username" class="input-field" placeholder="사용할 아이디" required>
+        </div>
+        <div class="form-group" style="margin-bottom: 1rem;">
+          <label for="signup-name" style="font-size: 0.8rem;">이름 (닉네임)</label>
+          <input type="text" id="signup-name" class="input-field" placeholder="표시될 이름" required>
+        </div>
+        <div class="form-group" style="margin-bottom: 1.5rem;">
+          <label for="signup-password" style="font-size: 0.8rem;">비밀번호</label>
+          <input type="password" id="signup-password" class="input-field" placeholder="비밀번호 설정" required>
+        </div>
+        <button type="submit" class="btn btn-primary" style="width: 100%; padding: 0.7rem;">회원가입 완료</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Onboarding Overlay (가용 시간 초기 설정) -->
+  <div id="onboarding-overlay" class="setup-overlay hidden">
+    <div class="setup-card glass-panel">
+      <h2>Mindful Todo 시작하기</h2>
+      <p>무리한 계획으로 인한 스트레스를 예방합니다.<br>오늘 하루 수면, 식사, 휴식 등을 제외하고 <strong>온전히 집중할 수 있는 가용 시간</strong>을 설정해주세요.</p>
+      
+      <div class="form-group">
+        <label for="initial-hours">오늘 가용 시간 설정</label>
+        <div class="input-with-unit">
+          <input type="number" id="initial-hours" min="1" max="24" value="6" required>
+          <span class="unit">시간</span>
+        </div>
+      </div>
+      
+      <button id="btn-start" class="btn btn-primary" style="width: 100%; padding: 0.8rem;">플래너 시작하기</button>
+    </div>
+  </div>
+
+  <div class="app-container">
+    <!-- Header -->
+    <header>
+      <div class="logo-group">
+        <h1>
+          <i data-lucide="compass" style="color: var(--accent-primary);"></i>
+          Mindful Todo
+        </h1>
+        <p>계획 오류와 자이가르닉 스트레스를 방지하는 똑똑한 투두리스트</p>
+      </div>
+      <div class="header-actions">
+        <div id="user-profile-header" class="hidden" style="display: flex; align-items: center; gap: 0.8rem; margin-right: 0.5rem; padding-right: 0.8rem; border-right: 1px solid var(--border-color);">
+          <span id="lbl-username" style="font-size: 0.85rem; font-weight: 600; color: var(--text-primary);">홍길동님</span>
+          <button id="btn-logout" class="btn btn-danger" style="padding: 0.3rem 0.6rem; font-size: 0.75rem; border-radius: var(--radius-sm);">로그아웃</button>
+        </div>
+        <span id="current-date" style="font-weight: 600; color: var(--text-secondary);">2026년 6월 21일</span>
+        <button id="btn-re-setup" class="btn btn-secondary btn-icon hidden" title="가용 시간 재설정">
+          <i data-lucide="settings"></i>
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Navigation Tabs -->
+    <div class="tabs-nav">
+      <button class="tab-btn active" data-tab="today">
+        <i data-lucide="check-square"></i> 오늘 계획
+      </button>
+      <button class="tab-btn" data-tab="braindump">
+        <i data-lucide="archive"></i> 임시 보관함 <span id="brain-dump-count" style="font-size: 0.75rem; background: var(--bg-tertiary); padding: 0.1rem 0.4rem; border-radius: var(--radius-round);">0</span>
+      </button>
+      <button class="tab-btn" data-tab="dashboard">
+        <i data-lucide="bar-chart-2"></i> 피드백 대시보드
+      </button>
+    </div>
+
+    <!-- Main Grid Layout -->
+    <main class="main-grid">
+      <!-- Left Column: Primary Working Area -->
+      <section class="column" id="today-tab-content">
+        <!-- Time Budget Gauge & Info Card -->
+        <div class="glass-panel budget-card">
+          <div class="budget-chart-container">
+            <canvas id="budgetRingChart"></canvas>
+          </div>
+          <div class="budget-details">
+            <div class="section-title" style="font-size: 1.1rem; margin-bottom: 0.2rem;">
+              오늘의 집중력 예산
+            </div>
+            <div class="budget-status-row" style="align-items: center; gap: 0.4rem; padding-bottom: 0.2rem;">
+              <span>총 가용 시간:</span>
+              <div style="display: flex; align-items: center; gap: 0.2rem;">
+                <input type="number" id="input-edit-budget" min="1" max="24" style="width: 50px; padding: 0.15rem 0.3rem; background: rgba(255,255,255,0.06); border: 1px solid var(--border-color); border-radius: var(--radius-sm); color: var(--text-primary); text-align: center; font-weight: 700; font-size: 0.85rem;" value="6">
+                <span style="font-size: 0.8rem; color: var(--text-secondary);">시간</span>
+                <button id="btn-save-budget" class="btn btn-primary" style="padding: 0.2rem 0.5rem; font-size: 0.75rem; border-radius: var(--radius-sm); margin-left: 0.2rem;">변경</button>
+              </div>
+            </div>
+            <div class="budget-status-row">
+              <span>계획된 시간:</span>
+              <span id="lbl-planned-budget">0분</span>
+            </div>
+            <div class="budget-status-row">
+              <span>남은 가용 시간:</span>
+              <span id="lbl-remaining-budget" class="highlight-budget">0분</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Buffer Weight Control Banner -->
+        <div class="buffer-banner">
+          <div class="buffer-banner-text">
+            <div class="buffer-banner-title">
+              <i data-lucide="shield-alert" style="width: 16px; height: 16px; color: var(--accent-primary);"></i>
+              과거 계획 오차율 버퍼 적용
+              <span id="lbl-buffer-factor" style="font-size: 0.8rem; background: var(--accent-primary-glow); color: var(--accent-primary); padding: 0.1rem 0.4rem; border-radius: 4px; font-weight: 700;">1.00x (보통)</span>
+            </div>
+            <div class="buffer-banner-desc">과거 예상보다 더 걸렸던 시간을 반영해 예상 소요 시간을 자동으로 보정합니다.</div>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="toggle-buffer" checked>
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <!-- Add Task Form -->
+        <div class="glass-panel add-task-card">
+          <div class="section-header">
+            <div class="section-title">
+              <i data-lucide="plus-circle" style="color: var(--accent-primary);"></i>
+              할 일 추가
+            </div>
+          </div>
+          <form id="add-task-form" class="add-task-form">
+            <div class="form-row">
+              <input type="text" id="task-title" class="input-field" placeholder="무엇을 하실 예정인가요?" required>
+              <div class="input-with-unit">
+                <input type="number" id="task-est" class="input-field" min="5" step="5" placeholder="예상 시간" required>
+                <span class="unit" style="font-size: 0.75rem; right: 0.6rem;">분</span>
+              </div>
+            </div>
+            <button type="submit" class="btn btn-primary">오늘 계획에 추가</button>
+          </form>
+        </div>
+
+        <!-- Today's Todo List -->
+        <div>
+          <div class="section-header">
+            <div class="section-title">
+              <i data-lucide="list-todo"></i>
+              오늘 할 일 목록
+            </div>
+            <span id="lbl-task-count" style="font-size: 0.85rem; color: var(--text-secondary);">등록됨: 0개</span>
+          </div>
+          <div id="today-tasks-container" class="task-list">
+            <!-- Dynamic task items go here -->
+            <div class="empty-state">
+              <i data-lucide="sparkles"></i>
+              <p>오늘 할 일이 비어 있습니다.<br>시간 예산 범위 내에서 무리하지 않게 채워보세요!</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Right Column: Brain Dump & Roll-over simulator -->
+      <section class="column">
+        <!-- Brain Dump (임시 보관함) - Show on all view tabs or in sidebar -->
+        <div class="glass-panel" style="padding: 1.5rem;" id="side-braindump-card">
+          <div class="drawer-header">
+            <div class="section-title">
+              <i data-lucide="brain" style="color: var(--accent-secondary);"></i>
+              임시 보관함 (Brain Dump)
+            </div>
+          </div>
+          <div class="section-desc">기한이 정해지지 않은 할 일, 인지 부하를 피하기 위해 격리한 일들입니다.</div>
+          
+          <form id="add-dump-form" style="display: flex; gap: 0.5rem; margin-bottom: 1rem;">
+            <input type="text" id="dump-title" class="input-field" placeholder="머릿속에 맴도는 막연한 일을 적어두세요." required>
+            <button type="submit" class="btn btn-secondary btn-icon" title="보관함에 보관">
+              <i data-lucide="plus"></i>
+            </button>
+          </form>
+
+          <div id="brain-dump-container" class="task-list" style="max-height: 250px; overflow-y: auto;">
+            <!-- Dynamic items go here -->
+            <div class="empty-state" style="padding: 2rem 1rem;">
+              <i data-lucide="check-circle-2"></i>
+              <p>보관함이 비어 있습니다.<br>당장 하지 못하는 부담스러운 일은 여기에 던져두세요.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Safe Roll-over Simulator -->
+        <div class="glass-panel sim-card">
+          <div class="sim-title">
+            <i data-lucide="alarm-clock"></i>
+            새벽 2시 안전한 이월 (Roll-over)
+          </div>
+          <p class="sim-desc">
+            자이가르닉 효과에 따른 스트레스를 방지하기 위해 <strong>새벽 2시</strong>가 되면 완료되지 않은 투두 항목들을 "실패/X" 아이콘 없이 다음 날 리스트로 조용히 안전하게 이월합니다.
+          </p>
+          <button id="btn-simulate-rollover" class="btn btn-secondary" style="width: 100%; border-color: rgba(168, 85, 247, 0.4); color: var(--accent-secondary);">
+            <i data-lucide="play-circle"></i>
+            이월 시뮬레이션 실행 (새벽 2시 강제 도달)
+          </button>
+        </div>
+      </section>
+
+      <!-- Full-view Content for Brain Dump (tab alternative for small screens or secondary view) -->
+      <section class="column hidden" id="braindump-tab-content">
+        <!-- Reuses the side-braindump-card logic or represents it in full details -->
+        <div class="glass-panel" style="padding: 2rem;">
+          <div class="section-title" style="font-size: 1.5rem; margin-bottom: 0.5rem;">
+            <i data-lucide="brain" style="color: var(--accent-secondary);"></i>
+            임시 보관함 (Brain Dump) 상세 목록
+          </div>
+          <p class="section-desc">할 일 목록을 보며 생기는 조급함을 차단하기 위해 임시 보존되는 공간입니다. 준비가 완료되면 오늘 할 일로 옮기세요.</p>
+          
+          <div id="full-braindump-container" class="task-list" style="margin-top: 1.5rem;">
+            <!-- Full view content loaded here -->
+          </div>
+        </div>
+      </section>
+
+      <!-- Feedback Dashboard View -->
+      <section class="column hidden" id="dashboard-tab-content" style="grid-column: 1 / -1;">
+        <div class="stats-grid">
+          <div class="glass-panel stats-card">
+            <span class="stats-label">오늘 완료한 할 일</span>
+            <span id="stats-completed" class="stats-num">0 / 0</span>
+          </div>
+          <div class="glass-panel stats-card">
+            <span class="stats-label">계획 대비 실제 소요 시간 비율</span>
+            <span id="stats-accuracy-rate" class="stats-num">0%</span>
+          </div>
+          <div class="glass-panel stats-card">
+            <span class="stats-label">오늘 누적 계획 오차</span>
+            <span id="stats-total-deviation" class="stats-num">0분</span>
+          </div>
+          <div class="glass-panel stats-card">
+            <span class="stats-label">안전 이월 횟수</span>
+            <span id="stats-rollover-count" class="stats-num">0회</span>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-top: 1.5rem;">
+          <div class="glass-panel chart-card">
+            <div class="section-title">오늘 계획 vs 실제 사용 시간</div>
+            <div class="chart-wrapper">
+              <canvas id="todayTimeChart"></canvas>
+            </div>
+          </div>
+          <div class="glass-panel chart-card">
+            <div class="section-title">최근 7일간 계획 오차율 트렌드</div>
+            <div class="chart-wrapper">
+              <canvas id="deviationTrendChart"></canvas>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Budget Overrun Warning Modal -->
+  <div id="overrun-modal" class="modal-overlay hidden">
+    <div class="modal-content glass-panel">
+      <h3 style="color: var(--accent-warning);">
+        <i data-lucide="alert-triangle"></i>
+        가용 시간 예산 초과 경고
+      </h3>
+      <p class="modal-desc" id="overrun-modal-text">
+        이 할 일을 등록하면 오늘 하루 집중 가능한 가용 시간(360분)을 초과하게 됩니다. 무리한 계획은 스트레스와 실패 요인이 될 수 있습니다.
+      </p>
+      <div class="modal-footer column-btns">
+        <button id="btn-overrun-braindump" class="btn btn-primary">
+          <i data-lucide="archive"></i> 임시 보관함(Brain Dump)에 저장
+        </button>
+        <button id="btn-overrun-tomorrow" class="btn btn-secondary">
+          <i data-lucide="corner-down-right"></i> 내일로 계획 미루기
+        </button>
+        <button id="btn-overrun-cancel" class="btn btn-danger">
+          취소하고 다시 계획하기
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Actual Time Taken Feedback Modal -->
+  <div id="actual-time-modal" class="modal-overlay hidden">
+    <div class="modal-content glass-panel">
+      <h3>
+        <i data-lucide="clock-arrow-up" style="color: var(--accent-success);"></i>
+        완료 소요 시간 입력
+      </h3>
+      <p class="modal-desc" id="actual-time-desc">
+        수고하셨습니다! "작업 이름"을(를) 완료하는 데 실제로 얼마나 걸렸나요?
+      </p>
+      
+      <div class="form-group">
+        <label for="actual-minutes">실제 걸린 시간</label>
+        <div class="input-with-unit">
+          <input type="number" id="actual-minutes" min="1" step="5" required>
+          <span class="unit">분</span>
+        </div>
+      </div>
+      
+      <div class="modal-footer">
+        <button id="btn-actual-skip" class="btn btn-secondary">건너뛰기</button>
+        <button id="btn-actual-save" class="btn btn-primary">완료 기록</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Chart.js and Lucide Icons CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="app.js"></script>
+</body>
+</html>
